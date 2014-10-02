@@ -28,6 +28,7 @@ class GPIO : public node::ObjectWrap
         static v8::Handle<v8::Value> SetMode(const v8::Arguments& args);
         static v8::Handle<v8::Value> Write(const v8::Arguments& args);
         static v8::Handle<v8::Value> Read(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Toggle(const v8::Arguments& args);
         int WriteValue(std::string path, std::string val);
         int ReadValue(std::string path);
         void log(std::string msg);

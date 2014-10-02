@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 v8::Persistent<v8::Function> GPIO::constructor;
 std::string GPIO::IN = "in";
@@ -39,6 +41,7 @@ void GPIO::Init(v8::Handle<v8::Object> exports)
     tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("setMode"), v8::FunctionTemplate::New(SetMode)->GetFunction());
     tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("write"), v8::FunctionTemplate::New(Write)->GetFunction());
     tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("read"), v8::FunctionTemplate::New(Read)->GetFunction());
+    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("toggle"), v8::FunctionTemplate::New(Toggle)->GetFunction());
 
     //Persist constructor
     GPIO::constructor = v8::Persistent<v8::Function>::New(tpl->GetFunction());
@@ -221,4 +224,16 @@ v8::Handle<v8::Value> GPIO::Read(const v8::Arguments& args) {
     }
     obj->log("GPIO " + obj->pin_num + " value changed to " + ss.str() + ".");
     return scope.Close(v8::Integer::New(res));
+}
+
+v8::Handle<v8::Value> GPIO::Toggle(const v8::Arguments& args)
+{
+    v8::HandleScope scope;
+    GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
+    std::string path = "/sys/class/gpio/gpio" + obj->pin_num + "/value";
+    int value = obj->ReadValue(path);
+    std::ostringstream ss;
+    ss << !value;
+    obj->WriteValue(path, ss.str());
+    return scope.Close(v8::Integer::New(0));
 }

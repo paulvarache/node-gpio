@@ -1,6 +1,7 @@
 #include <node.h>
 #include <iostream>
 #include "GPIO.h"
+#include "PWM.h"
 
 v8::Handle<v8::Value> Debug(const v8::Arguments& args) {
     v8::HandleScope scope;
@@ -18,6 +19,7 @@ v8::Handle<v8::Value> Debug(const v8::Arguments& args) {
 }
 
 void init(v8::Handle<v8::Object> exports) {
+    PWM::Init(exports);
     GPIO::Init(exports);
     exports->Set(v8::String::NewSymbol("setDebug"), v8::FunctionTemplate::New(Debug)->GetFunction());
 }
