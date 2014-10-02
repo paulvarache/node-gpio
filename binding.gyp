@@ -2,7 +2,7 @@
     "targets": [{
         "target_name": "gpio",
         "sources": ["src/node-gpio.cpp", "src/GPIO.cpp", "src/PWM.cpp"],
-        'cflags': ['-fexceptions', "-std=c++11"],
+        'cflags': ['-fexceptions', "-std=c++0x"],
         'cflags_cc': ['-fexceptions'],
         "conditions": [
               [ 'OS=="mac"', {

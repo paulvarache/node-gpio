@@ -21,15 +21,12 @@ PWM::~PWM()
 void PWM::run()
 {
     while(this->running) {
-        int t = (1 / this->freq) * 1000;
+        int t = 1000 / this->freq;
         int up = this->dc * t / 100;
         int down = t - up;
-        std::cout << up << std::endl;
         this->write(GPIO::HIGH);
-        std::cout << "UP" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(up));
         this->write(GPIO::LOW);
-        std::cout << "DOWN" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(down));
     }
 }
@@ -44,7 +41,6 @@ void PWM::stop()
 {
     this->running = false;
     this->thread.join();
-    std::cout << "end" << std::endl;
 }
 
 void PWM::Init(v8::Handle<v8::Object> exports)
