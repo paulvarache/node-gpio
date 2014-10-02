@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-v8::Persistent<v8::Function> GPIO::constructor;
+v8::Persistent<v8::FunctionTemplate> GPIO::constructor;
 std::string GPIO::IN = "in";
 std::string GPIO::OUT = "out";
 int GPIO::HIGH = 1;
@@ -22,6 +22,7 @@ GPIO::~GPIO()
 {
 
 }
+
 
 void GPIO::Init(v8::Handle<v8::Object> exports)
 {
@@ -44,10 +45,10 @@ void GPIO::Init(v8::Handle<v8::Object> exports)
     tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("toggle"), v8::FunctionTemplate::New(Toggle)->GetFunction());
 
     //Persist constructor
-    GPIO::constructor = v8::Persistent<v8::Function>::New(tpl->GetFunction());
+    GPIO::constructor = v8::Persistent<v8::FunctionTemplate>::New(tpl);
 
     //Register GPIO on the exports
-    exports->Set(v8::String::NewSymbol("GPIO"), GPIO::constructor);
+    exports->Set(v8::String::NewSymbol("GPIO"), GPIO::constructor->GetFunction());
     exports->Set(v8::String::NewSymbol("IN"), v8::String::New(GPIO::IN.c_str()));
     exports->Set(v8::String::NewSymbol("OUT"), v8::String::New(GPIO::OUT.c_str()));
     exports->Set(v8::String::NewSymbol("HIGH"), v8::Integer::New(GPIO::HIGH));
@@ -90,6 +91,16 @@ int GPIO::WriteValue(std::string path, std::string val)
     file << val;
     file.close();
     return 0;
+}
+
+int GPIO::write(int value) {
+    if (!this->opened || this->mode == GPIO::IN) {
+        return -1;
+    }
+    std::string path = "/sys/class/gpio/gpio" + this->pin_num + "/value";
+    std::ostringstream ss;
+    ss << value;
+    return this->WriteValue(path, ss.str());
 }
 
 int GPIO::ReadValue(std::string path)
@@ -167,16 +178,6 @@ v8::Handle<v8::Value> GPIO::SetMode(const v8::Arguments& args) {
 v8::Handle<v8::Value> GPIO::Write(const v8::Arguments& args) {
     v8::HandleScope scope;
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
-    if (!obj->opened) {
-        std::string err_msg = "GPIO " + obj->pin_num + " is not opened.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
-    }
-    if (obj->mode == GPIO::IN) {
-        std::string err_msg = "GPIO " + obj->pin_num + " is not in the right mode";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
-    }
     if (args.Length() < 1) {
         v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
         return scope.Close(v8::Undefined());
@@ -187,15 +188,14 @@ v8::Handle<v8::Value> GPIO::Write(const v8::Arguments& args) {
     }
     v8::Local<v8::Integer> param1 = args[0]->ToInteger();
     int value = param1->IntegerValue();
-    std::string path = "/sys/class/gpio/gpio" + obj->pin_num + "/value";
-    std::ostringstream ss;
-    ss << value;
-    int res = obj->WriteValue(path, ss.str());
+    int res = obj->write(value);
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to change GPIO " + obj->pin_num + " value.";
         v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
         return scope.Close(v8::Undefined());
     }
+    std::ostringstream ss;
+    ss << value;
     obj->log("GPIO " + obj->pin_num + " value changed to " + ss.str() + ".");
     return scope.Close(v8::Integer::New(res));
 }

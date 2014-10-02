@@ -7,7 +7,10 @@
 
 class GPIO : public node::ObjectWrap
 {
-    static v8::Persistent<v8::Function> constructor;
+    protected:
+        static v8::Persistent<v8::FunctionTemplate> constructor;
+        int write(int);
+        int read();
 
     public:
         std::string pin_num;
