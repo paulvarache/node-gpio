@@ -1,7 +1,7 @@
 {
     "targets": [{
         "target_name": "gpio",
-        "sources": ["src/node-gpio.cpp", "src/GPIO.cpp", "src/PWM.cpp"],
+        "sources": ["src/node-gpio.cpp", "src/GPIO.cpp", "src/PWM.cpp", "src/CapacitiveTouch.cpp"],
         'cflags': ['-fexceptions', "-std=c++0x"],
         'cflags_cc': ['-fexceptions'],
         "conditions": [

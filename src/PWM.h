@@ -6,7 +6,6 @@
 #include "GPIO.h"
 #include <thread>
 
-
 class PWM : public GPIO
 {
     static v8::Persistent<v8::FunctionTemplate> pwm_constructor;
@@ -21,6 +20,9 @@ class PWM : public GPIO
         bool running;
         explicit PWM(std::string num = "4");
         ~PWM();
+
+        int setMode(std::string);
+
         static v8::Handle<v8::Value> New(const v8::Arguments& args);
         static void Init(v8::Handle<v8::Object> target);
         static v8::Handle<v8::Value> Start(const v8::Arguments& args);

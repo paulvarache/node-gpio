@@ -1,0 +1,27 @@
+{
+  "name": "node-gpio",
+  "version": "0.1.0",
+  "description": "A GPIO module for single board computers like the Raspberry Pi or the Banana Pi written in C++",
+  "main": "node-gpio.js",
+  "directories": {
+    "example": "example"
+  },
+  "dependencies": {},
+  "devDependencies": {
+      "joystick": "~0.1.1"
+  },
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulvarache/node-gpio.git"
+  },
+  "author": "Paul Varache",
+  "license": "ISC",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/paulvarache/node-gpio/issues"
+  },
+  "homepage": "https://github.com/paulvarache/node-gpio"
+}

@@ -9,10 +9,13 @@ class GPIO : public node::ObjectWrap
 {
     protected:
         static v8::Persistent<v8::FunctionTemplate> constructor;
-        int write(int);
-        int read();
 
     public:
+        // Constructor destructor
+        explicit GPIO(std::string num = "4");
+        ~GPIO();
+
+        // Properties
         std::string pin_num;
         bool opened;
         std::string mode;
@@ -21,10 +24,20 @@ class GPIO : public node::ObjectWrap
         static int HIGH;
         static int LOW;
         static bool debug;
-        explicit GPIO(std::string num = "4");
-        ~GPIO();
+
+        // Methods
+        int open();
+        int close();
+        int write(int);
+        int read();
+        virtual int setMode(std::string mode);
+        int WriteValue(std::string path, std::string val);
+        int ReadValue(std::string path);
+        void log(std::string msg);
+
+        // V8 exposed Methods
         static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        static void Init(v8::Handle<v8::Object> target);
+        static void Init(v8::Handle<v8::Object> exports);
         static v8::Handle<v8::Value> GetNum(v8::Local<v8::String> property, const v8::AccessorInfo& info);
         static v8::Handle<v8::Value> Open(const v8::Arguments& args);
         static v8::Handle<v8::Value> Close(const v8::Arguments& args);
@@ -32,9 +45,6 @@ class GPIO : public node::ObjectWrap
         static v8::Handle<v8::Value> Write(const v8::Arguments& args);
         static v8::Handle<v8::Value> Read(const v8::Arguments& args);
         static v8::Handle<v8::Value> Toggle(const v8::Arguments& args);
-        int WriteValue(std::string path, std::string val);
-        int ReadValue(std::string path);
-        void log(std::string msg);
 };
 
 #endif

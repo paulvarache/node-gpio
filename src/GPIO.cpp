@@ -93,14 +93,41 @@ int GPIO::WriteValue(std::string path, std::string val)
     return 0;
 }
 
+int GPIO::open()
+{
+    this->opened = true;
+    return this->WriteValue("/sys/class/gpio/export", this->pin_num);
+}
+
+int GPIO::close()
+{
+    this->opened = false;
+    return this->WriteValue("/sys/class/gpio/unexport", this->pin_num);
+}
+
 int GPIO::write(int value) {
-    if (!this->opened || this->mode == GPIO::IN) {
+    if (!this->opened) {
         return -1;
     }
     std::string path = "/sys/class/gpio/gpio" + this->pin_num + "/value";
     std::ostringstream ss;
     ss << value;
     return this->WriteValue(path, ss.str());
+}
+
+int GPIO::read()
+{
+    if (!this->opened) {
+        return -1;
+    }
+    std::string path = "/sys/class/gpio/gpio" + this->pin_num + "/value";
+    return this->ReadValue(path);
+}
+
+int GPIO::setMode(std::string mode) {
+    std::string path = "/sys/class/gpio/gpio" + this->pin_num + "/direction";
+    this->mode = mode;
+    return this->WriteValue(path, mode);
 }
 
 int GPIO::ReadValue(std::string path)
@@ -119,13 +146,12 @@ v8::Handle<v8::Value> GPIO::Open(const v8::Arguments& args)
 {
     v8::HandleScope scope;
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
-    int res = obj->WriteValue("/sys/class/gpio/export", obj->pin_num);
+    int res = obj->open();
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to open GPIO " + obj->pin_num + ".";
         v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
         return scope.Close(v8::Undefined());
     }
-    obj->opened = true;
     obj->log("GPIO " + obj->pin_num + " opened.");
     return scope.Close(v8::Integer::New(res));
 }
@@ -134,13 +160,12 @@ v8::Handle<v8::Value> GPIO::Close(const v8::Arguments& args)
 {
     v8::HandleScope scope;
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
-    int res = obj->WriteValue("/sys/class/gpio/unexport", obj->pin_num);
+    int res = obj->close();
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to close GPIO " + obj->pin_num + ".";
         v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
         return scope.Close(v8::Undefined());
     }
-    obj->opened = false;
     obj->log("GPIO " + obj->pin_num + " closed.");
     return scope.Close(v8::Integer::New(res));
 }
@@ -162,14 +187,12 @@ v8::Handle<v8::Value> GPIO::SetMode(const v8::Arguments& args) {
         return scope.Close(v8::Undefined());
     }
     std::string mode(*v8::String::Utf8Value(args[0]));
-    std::string path = "/sys/class/gpio/gpio" + obj->pin_num + "/direction";
-    int res = obj->WriteValue(path, mode);
+    int res = obj->setMode(mode);
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to change GPIO " + obj->pin_num + " mode.";
         v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
         return scope.Close(v8::Undefined());
     }
-    obj->mode = mode;
     obj->log("GPIO " + obj->pin_num + " mode changed to " + mode + ".");
     return scope.Close(v8::Integer::New(res));
 }
@@ -213,8 +236,7 @@ v8::Handle<v8::Value> GPIO::Read(const v8::Arguments& args) {
         v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
         return scope.Close(v8::Undefined());
     }
-    std::string path = "/sys/class/gpio/gpio" + obj->pin_num + "/value";
-    int res = obj->ReadValue(path);
+    int res = obj->read();
     std::ostringstream ss;
     ss << res;
     if (res < 0) {
