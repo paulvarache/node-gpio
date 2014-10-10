@@ -8,7 +8,8 @@ var EventEmitter = require('events').EventEmitter;
  */
 extend(true, gpio.CapacitiveTouch.prototype, EventEmitter.prototype);
 gpio.CapacitiveTouch.interval = null;
-gpio.CapacitiveTouch.prototype.listen = function () {
+gpio.CapacitiveTouch.prototype.listen = function (tolerence) {
+    tolerence = tolerence | 0;
     var old = -1;
     var self = this;
     this.interval = setInterval(function (){
@@ -18,7 +19,7 @@ gpio.CapacitiveTouch.prototype.listen = function () {
             self.emit("changed", {value: pushed, charge: value});
         }
         old = pushed;
-    });
+    }, tolerence);
 };
 gpio.CapacitiveTouch.prototype.stopListen = function () {
     clearInterval(this.interval);
