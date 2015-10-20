@@ -49,7 +49,6 @@ PWM
 
     var led = new PWM("28");
     led.open();
-    led.setMode(gpio.OUT);
     led.frequency = 100;
     led.dutyCycle = 50;
     led.start();
