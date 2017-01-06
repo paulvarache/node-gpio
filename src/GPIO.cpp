@@ -24,55 +24,55 @@ GPIO::~GPIO()
 }
 
 
-void GPIO::Init(v8::Handle<v8::Object> exports)
+void GPIO::Init(v8::Local<v8::Object> exports)
 {
-    v8::HandleScope scope;
-
+    v8::Isolate* isolate = exports->GetIsolate();
     // Constructor
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(New); //Binds the new
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New); //Binds the new
     tpl->InstanceTemplate()->SetInternalFieldCount(1); //The constructor add only one instance
-    tpl->SetClassName(v8::String::NewSymbol("GPIO"));
+    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "GPIO"));
 
     //Accessors
-    tpl->InstanceTemplate()->SetAccessor(v8::String::New("num"), GetNum);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "num"), GetNum);
 
     //Methods
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("open"), v8::FunctionTemplate::New(Open)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("close"), v8::FunctionTemplate::New(Close)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("setMode"), v8::FunctionTemplate::New(SetMode)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("write"), v8::FunctionTemplate::New(Write)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("read"), v8::FunctionTemplate::New(Read)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("toggle"), v8::FunctionTemplate::New(Toggle)->GetFunction());
+    NODE_SET_PROTOTYPE_METHOD(tpl, "open", Open);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "close", Close);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "setMode", SetMode);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "write", Write);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "read", Read);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "toggle", Toggle);
 
-    //Persist constructor
-    GPIO::constructor = v8::Persistent<v8::FunctionTemplate>::New(tpl);
+    GPIO::constructor.Reset(isolate, tpl);
 
     //Register GPIO on the exports
-    exports->Set(v8::String::NewSymbol("GPIO"), GPIO::constructor->GetFunction());
-    exports->Set(v8::String::NewSymbol("IN"), v8::String::New(GPIO::IN.c_str()));
-    exports->Set(v8::String::NewSymbol("OUT"), v8::String::New(GPIO::OUT.c_str()));
-    exports->Set(v8::String::NewSymbol("HIGH"), v8::Integer::New(GPIO::HIGH));
-    exports->Set(v8::String::NewSymbol("LOW"), v8::Integer::New(GPIO::LOW));
+    exports->Set(v8::String::NewFromUtf8(isolate, "GPIO"), tpl->GetFunction());
+    exports->Set(v8::String::NewFromUtf8(isolate, "IN"), v8::String::NewFromUtf8(isolate, GPIO::IN.c_str()));
+    exports->Set(v8::String::NewFromUtf8(isolate, "OUT"), v8::String::NewFromUtf8(isolate, GPIO::OUT.c_str()));
+    exports->Set(v8::String::NewFromUtf8(isolate, "HIGH"), v8::Integer::New(isolate, GPIO::HIGH));
+    exports->Set(v8::String::NewFromUtf8(isolate, "LOW"), v8::Integer::New(isolate, GPIO::LOW));
 }
 
-v8::Handle<v8::Value> GPIO::New(const v8::Arguments& args)
+void GPIO::New(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
+    // Invoked as constructor: `new MyObject(...)`
     if (args.Length() > 0 && !args[0]->IsString()) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
+        return;
     }
     GPIO* gpio_instance =  args.Length() < 1 ? new GPIO() : new GPIO(std::string(*v8::String::Utf8Value(args[0])));
 
     gpio_instance->Wrap(args.This());
 
-    return args.This();
+    args.GetReturnValue().Set(args.This());
 }
 
-v8::Handle<v8::Value> GPIO::GetNum(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+void GPIO::GetNum(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     GPIO* obj = node::ObjectWrap::Unwrap<GPIO>(info.Holder());
-    return v8::String::New(obj->pin_num.c_str());
+    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, obj->pin_num.c_str()));
 }
 
 void GPIO::log(std::string msg)
@@ -137,125 +137,125 @@ int GPIO::ReadValue(std::string path)
     if (!file) {
         return -1;
     }
-    getline(file, line);
+    std::getline(file, line);
     file.close();
     return atoi(line.c_str());
 }
 
-v8::Handle<v8::Value> GPIO::Open(const v8::Arguments& args)
+void GPIO::Open(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     int res = obj->open();
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to open GPIO " + obj->pin_num + ".";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     obj->log("GPIO " + obj->pin_num + " opened.");
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
-v8::Handle<v8::Value> GPIO::Close(const v8::Arguments& args)
+void GPIO::Close(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     int res = obj->close();
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to close GPIO " + obj->pin_num + ".";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     obj->log("GPIO " + obj->pin_num + " closed.");
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
-v8::Handle<v8::Value> GPIO::SetMode(const v8::Arguments& args) {
-    v8::HandleScope scope;
+void GPIO::SetMode(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     if (!obj->opened) {
         std::string err_msg = "GPIO " + obj->pin_num + " is not opened.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     if (args.Length() < 1) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
     if (!args[0]->IsString()) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
+        return;
     }
     std::string mode(*v8::String::Utf8Value(args[0]));
     int res = obj->setMode(mode);
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to change GPIO " + obj->pin_num + " mode.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     obj->log("GPIO " + obj->pin_num + " mode changed to " + mode + ".");
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
 
-v8::Handle<v8::Value> GPIO::Write(const v8::Arguments& args) {
-    v8::HandleScope scope;
+void GPIO::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     if (args.Length() < 1) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
     if (!args[0]->IsNumber()) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
+        return;
     }
     v8::Local<v8::Integer> param1 = args[0]->ToInteger();
     int value = param1->IntegerValue();
     int res = obj->write(value);
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to change GPIO " + obj->pin_num + " value.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     std::ostringstream ss;
     ss << value;
     obj->log("GPIO " + obj->pin_num + " value changed to " + ss.str() + ".");
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
-v8::Handle<v8::Value> GPIO::Read(const v8::Arguments& args) {
-    v8::HandleScope scope;
+void GPIO::Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     if (!obj->opened) {
         std::string err_msg = "GPIO " + obj->pin_num + " is not opened.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     if (obj->mode == GPIO::OUT) {
         std::string err_msg = "GPIO " + obj->pin_num + " is not in the right mode";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     int res = obj->read();
     std::ostringstream ss;
     ss << res;
     if (res < 0) {
         std::string err_msg = "OPERATION FAILED: Unable to change GPIO " + obj->pin_num + " value.";
-        v8::ThrowException(v8::Exception::Error(v8::String::New(err_msg.c_str())));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, err_msg.c_str())));
+        return;
     }
     obj->log("GPIO " + obj->pin_num + " value changed to " + ss.str() + ".");
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
-v8::Handle<v8::Value> GPIO::Toggle(const v8::Arguments& args)
+void GPIO::Toggle(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     GPIO* obj = ObjectWrap::Unwrap<GPIO>(args.This());
     std::string path = "/sys/class/gpio/gpio" + obj->pin_num + "/value";
     int value = obj->ReadValue(path);
     std::ostringstream ss;
     ss << !value;
     obj->WriteValue(path, ss.str());
-    return scope.Close(v8::Integer::New(0));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, 0));
 }

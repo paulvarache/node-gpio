@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-v8::Persistent<v8::FunctionTemplate> PWM::pwm_constructor;
+v8::Persistent<v8::FunctionTemplate> PWM::constructor;
 
 PWM::PWM(std::string num) : GPIO(num), running(false)
 {
@@ -48,82 +48,87 @@ void PWM::stop()
     this->thread.join();
 }
 
-void PWM::Init(v8::Handle<v8::Object> exports)
+void PWM::Init(v8::Local<v8::Object> exports)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = exports->GetIsolate();
 
     // Constructor
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(New); //Binds the new
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New); //Binds the new
     tpl->InstanceTemplate()->SetInternalFieldCount(1); //The constructor add only one instance
-    tpl->SetClassName(v8::String::NewSymbol("PWM"));
+    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "PWM"));
 
-    tpl->Inherit(GPIO::constructor);
+    v8::Local<v8::FunctionTemplate> parent = v8::Local<v8::FunctionTemplate>::New(isolate, GPIO::constructor);
+
+    tpl->Inherit(parent);
 
     //Accessors
-    tpl->InstanceTemplate()->SetAccessor(v8::String::New("frequency"), GetFreq, SetFreq);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::New("dutyCycle"), GetDC, SetDC);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "frequency"), GetFreq, SetFreq);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dutyCycle"), GetDC, SetDC);
 
     //Functions
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("start"), v8::FunctionTemplate::New(Start)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("stop"), v8::FunctionTemplate::New(Stop)->GetFunction());
+    NODE_SET_PROTOTYPE_METHOD(tpl, "start", Start);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "stop", Stop);
 
     //Persist constructor
-    PWM::pwm_constructor = v8::Persistent<v8::FunctionTemplate>::New(tpl);
+    PWM::constructor.Reset(isolate, tpl);
 
-    //Register GPIO on the exports
-    exports->Set(v8::String::NewSymbol("PWM"), PWM::pwm_constructor->GetFunction());
+    //Register PWM on the exports
+    exports->Set(v8::String::NewFromUtf8(isolate, "PWM"), tpl->GetFunction());
 }
 
-v8::Handle<v8::Value> PWM::New(const v8::Arguments& args)
+void PWM::New(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     if (args.Length() > 0 && !args[0]->IsString()) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
+        return;
     }
     PWM* pwm_instance =  args.Length() < 1 ? new PWM() : new PWM(std::string(*v8::String::Utf8Value(args[0])));
 
     pwm_instance->Wrap(args.This());
 
-    return args.This();
+    args.GetReturnValue().Set(args.This());
 }
 
-v8::Handle<v8::Value> PWM::Start(const v8::Arguments& args)
+void PWM::Start(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(args.This());
     obj->start();
-    return scope.Close(v8::Integer::New(0));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, 0));
 }
-v8::Handle<v8::Value> PWM::Stop(const v8::Arguments& args)
+void PWM::Stop(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(args.This());
     obj->stop();
-    return scope.Close(v8::Integer::New(0));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, 0));
 }
 
-v8::Handle<v8::Value> PWM::GetFreq(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+void PWM::GetFreq(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(info.Holder());
-    return v8::Integer::New(obj->freq);
+    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->freq));
 }
-void PWM::SetFreq(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+void PWM::SetFreq(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info)
 {
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(info.Holder());
     obj->freq = value->ToInteger()->IntegerValue();
 }
-v8::Handle<v8::Value> PWM::GetDC(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+void PWM::GetDC(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(info.Holder());
-    return v8::Integer::New(obj->dc);
+    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->dc));
 }
-void PWM::SetDC(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+void PWM::SetDC(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     PWM* obj = node::ObjectWrap::Unwrap<PWM>(info.Holder());
     int rvalue = value->ToInteger()->IntegerValue();
     if (rvalue < 0 || rvalue > 100) {
-        v8::ThrowException(v8::Exception::Error(v8::String::New("dutyCycle should be between 0 and 100")));
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "dutyCycle should be between 0 and 100")));
     } else {
         obj->dc = rvalue;
     }

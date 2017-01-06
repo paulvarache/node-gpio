@@ -1,7 +1,7 @@
 #include "CapacitiveTouch.h"
 #include <iostream>
 
-v8::Persistent<v8::FunctionTemplate> CapacitiveTouch::ct_constructor;
+v8::Persistent<v8::FunctionTemplate> CapacitiveTouch::constructor;
 
 
 /**
@@ -79,33 +79,33 @@ bool CapacitiveTouch::isTimeout (int value)
  */
 void CapacitiveTouch::Init(v8::Handle<v8::Object> exports)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = exports->GetIsolate();
 
     // Constructor definition
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(New);
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New);
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    tpl->SetClassName(v8::String::NewSymbol("CapacitiveTouch"));
+    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "CapacitiveTouch"));
 
-    tpl->InstanceTemplate()->SetAccessor(v8::String::New("timeout"), GetTimeout, SetTimeout);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::New("threshold"), GetThreshold, SetThreshold);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "timeout"), GetTimeout, SetTimeout);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "threshold"), GetThreshold, SetThreshold);
 
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("open"), v8::FunctionTemplate::New(Open)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("close"), v8::FunctionTemplate::New(Close)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("getChargeCycle"), v8::FunctionTemplate::New(GetChargeCycle)->GetFunction());
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("getSample"), v8::FunctionTemplate::New(GetSample)->GetFunction());
+    NODE_SET_PROTOTYPE_METHOD(tpl, "open", Open);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "close", Close);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getChargeCycle", GetChargeCycle);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "getSample", GetSample);
 
-    CapacitiveTouch::ct_constructor = v8::Persistent<v8::FunctionTemplate>::New(tpl);
+    CapacitiveTouch::constructor.Reset(isolate, tpl);
 
-    exports->Set(v8::String::NewSymbol("CapacitiveTouch"), CapacitiveTouch::ct_constructor->GetFunction());
+    exports->Set(v8::String::NewFromUtf8(isolate, "CapacitiveTouch"), tpl->GetFunction());
 }
 
-v8::Handle<v8::Value> CapacitiveTouch::New(const v8::Arguments& args)
+void CapacitiveTouch::New(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
+    v8::Isolate* isolate = args.GetIsolate();
     if (!args.Length() == 2)
     {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
     std::string inNum(*v8::String::Utf8Value(args[0]));
     std::string outNum(*v8::String::Utf8Value(args[1]));
@@ -113,80 +113,78 @@ v8::Handle<v8::Value> CapacitiveTouch::New(const v8::Arguments& args)
 
     instance->Wrap(args.This());
 
-    return args.This();
+    args.GetReturnValue().Set(args.This());
 }
 
-v8::Handle<v8::Value> CapacitiveTouch::Open(const v8::Arguments& args)
+void CapacitiveTouch::Open(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(args.This());
     obj->open();
-    return scope.Close(v8::Undefined());
 }
 
-v8::Handle<v8::Value> CapacitiveTouch::Close(const v8::Arguments& args)
+void CapacitiveTouch::Close(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(args.This());
     obj->close();
-    return scope.Close(v8::Undefined());
 }
 
-v8::Handle<v8::Value> CapacitiveTouch::GetChargeCycle(const v8::Arguments& args) {
-    v8::HandleScope scope;
+void CapacitiveTouch::GetChargeCycle(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(args.This());
     int res = obj->getChargeCycle();
     if (res < 0)
     {
-        v8::ThrowException(v8::Exception::Error(v8::String::New("Cannot get charge cycle: Timeout")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Cannot get charge cycle: Timeout")));
+        return;
     }
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
-v8::Handle<v8::Value> CapacitiveTouch::GetSample(const v8::Arguments& args)
+void CapacitiveTouch::GetSample(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-    v8::HandleScope scope;
-    if(args.Length() != 1)
+    v8::Isolate* isolate = args.GetIsolate();
+    if (args.Length() != 1)
     {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Missing argument")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Missing argument")));
+        return;
     }
-    if(!args[0]->IsNumber())
+    if (!args[0]->IsNumber())
     {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong argument")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong argument")));
+        return;
     }
     int size = args[0]->ToInteger()->IntegerValue();
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(args.This());
     int res = obj->getSample(size);
     if (res < 0) {
-        v8::ThrowException(v8::Exception::Error(v8::String::New("Cannot get charge cycle: timeout")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "Cannot get charge cycle: timeout")));
+        return;
     }
-    return scope.Close(v8::Integer::New(res));
+    args.GetReturnValue().Set(v8::Integer::New(isolate, res));
 }
 
 
 /**
  * V8 EXPOSED PROPERTIES ACCESSORS
  */
-v8::Handle<v8::Value> CapacitiveTouch::GetTimeout(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+void CapacitiveTouch::GetTimeout(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(info.Holder());
-    return v8::Integer::New(obj->timeout);
+    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->timeout));
 }
-void CapacitiveTouch::SetTimeout(v8::Local<v8::String> property, v8::Local<v8::Value> value,  const v8::AccessorInfo& info)
+void CapacitiveTouch::SetTimeout(v8::Local<v8::String> property, v8::Local<v8::Value> value,  const v8::PropertyCallbackInfo<void> &info)
 {
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(info.Holder());
     obj->timeout = value->ToInteger()->IntegerValue();
 }
-v8::Handle<v8::Value> CapacitiveTouch::GetThreshold(v8::Local<v8::String> property, const v8::AccessorInfo& info)
+void CapacitiveTouch::GetThreshold(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info)
 {
+    v8::Isolate* isolate = info.GetIsolate();
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(info.Holder());
-    return v8::Integer::New(obj->threshold);
+    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->threshold));
 }
-void CapacitiveTouch::SetThreshold(v8::Local<v8::String> property, v8::Local<v8::Value> value,  const v8::AccessorInfo& info)
+void CapacitiveTouch::SetThreshold(v8::Local<v8::String> property, v8::Local<v8::Value> value,  const v8::PropertyCallbackInfo<void> &info)
 {
     CapacitiveTouch* obj = node::ObjectWrap::Unwrap<CapacitiveTouch>(info.Holder());
     obj->threshold = value->ToInteger()->IntegerValue();

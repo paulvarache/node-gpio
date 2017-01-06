@@ -4,26 +4,26 @@
 #include "PWM.h"
 #include "CapacitiveTouch.h"
 
-v8::Handle<v8::Value> Debug(const v8::Arguments& args) {
-    v8::HandleScope scope;
+void Debug(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
     if (args.Length() < 1) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong number of arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "Wrong number of arguments"));
+        return;
     }
     if (!args[0]->IsBoolean()) {
-        v8::ThrowException(v8::Exception::TypeError(v8::String::New("Wrong arguments")));
-        return scope.Close(v8::Undefined());
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "Wrong arguments"));
+        return;
     }
     v8::Local<v8::Boolean> param1 = args[0]->ToBoolean();
     GPIO::debug = param1->BooleanValue();
-    return scope.Close(param1);
+    args.GetReturnValue().Set(param1);
 }
 
-void init(v8::Handle<v8::Object> exports) {
+void Init(v8::Local<v8::Object> exports) {
     GPIO::Init(exports);
     PWM::Init(exports);
     CapacitiveTouch::Init(exports);
-    exports->Set(v8::String::NewSymbol("setDebug"), v8::FunctionTemplate::New(Debug)->GetFunction());
+    NODE_SET_METHOD(exports, "setDebug", Debug);
 }
 
-NODE_MODULE(gpio, init);
+NODE_MODULE(gpio, Init);

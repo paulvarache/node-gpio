@@ -8,7 +8,7 @@
 
 class PWM : public GPIO
 {
-    static v8::Persistent<v8::FunctionTemplate> pwm_constructor;
+    static v8::Persistent<v8::FunctionTemplate> constructor;
     void start();
     void stop();
     void run();
@@ -23,14 +23,14 @@ class PWM : public GPIO
 
         int setMode(std::string);
 
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        static void Init(v8::Handle<v8::Object> target);
-        static v8::Handle<v8::Value> Start(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Stop(const v8::Arguments& args);
-        static v8::Handle<v8::Value> GetFreq(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-        static void SetFreq(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-        static v8::Handle<v8::Value> GetDC(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-        static void SetDC(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+        static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Init(v8::Local<v8::Object> target);
+        static void Start(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Stop(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void GetFreq(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
+        static void SetFreq(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info);
+        static void GetDC(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
+        static void SetDC(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info);
 };
 
 #endif

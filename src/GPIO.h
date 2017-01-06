@@ -3,7 +3,7 @@
 
 #include <string>
 #include <node.h>
-
+#include <node_object_wrap.h>
 
 class GPIO : public node::ObjectWrap
 {
@@ -36,15 +36,15 @@ class GPIO : public node::ObjectWrap
         void log(std::string msg);
 
         // V8 exposed Methods
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        static void Init(v8::Handle<v8::Object> exports);
-        static v8::Handle<v8::Value> GetNum(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-        static v8::Handle<v8::Value> Open(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Close(const v8::Arguments& args);
-        static v8::Handle<v8::Value> SetMode(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Write(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Read(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Toggle(const v8::Arguments& args);
+        static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Init(v8::Local<v8::Object> exports);
+        static void GetNum(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
+        static void Open(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void SetMode(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Read(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Toggle(const v8::FunctionCallbackInfo<v8::Value>& args);
 };
 
 #endif

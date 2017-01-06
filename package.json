@@ -1,6 +1,6 @@
 {
   "name": "node-gpio",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A GPIO module for single board computers like the Raspberry Pi or the Banana Pi written in C++",
   "main": "node-gpio.js",
   "directories": {

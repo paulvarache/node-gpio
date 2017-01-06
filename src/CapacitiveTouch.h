@@ -12,7 +12,7 @@ class CapacitiveTouch: public node::ObjectWrap
         int threshold;
         int timeout;
 
-        static v8::Persistent<v8::FunctionTemplate> ct_constructor;
+        static v8::Persistent<v8::FunctionTemplate> constructor;
 
         bool isTimeout(int);
 
@@ -28,18 +28,18 @@ class CapacitiveTouch: public node::ObjectWrap
         int getSample(int);
 
         // V8 exposed methods
-        static v8::Handle<v8::Value> New(const v8::Arguments &args);
+        static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
         static void Init(v8::Handle<v8::Object> exports);
-        static v8::Handle<v8::Value> Open(const v8::Arguments &args);
-        static v8::Handle<v8::Value> Close(const v8::Arguments &args);
-        static v8::Handle<v8::Value> GetChargeCycle(const v8::Arguments &args);
-        static v8::Handle<v8::Value> GetSample(const v8::Arguments &args);
+        static void Open(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void GetChargeCycle(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void GetSample(const v8::FunctionCallbackInfo<v8::Value>& args);
 
         // v8 exposed properties
-        static v8::Handle<v8::Value> GetTimeout(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-        static void SetTimeout(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-        static v8::Handle<v8::Value> GetThreshold(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-        static void SetThreshold(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+        static void GetTimeout(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
+        static void SetTimeout(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info);
+        static void GetThreshold(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info);
+        static void SetThreshold(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void> &info);
 };
 
 #endif
